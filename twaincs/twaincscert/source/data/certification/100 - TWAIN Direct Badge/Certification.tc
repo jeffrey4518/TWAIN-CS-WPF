@@ -1,0 +1,117 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; TWAIN Direct Badge
+;   Check if TWAIN Direct is supported by the driver.  This is a badge, meaning that failure will not
+;   invalidate scanner certification.  Instead, passage will add TWAIN Direct support to the cert.
+;
+; Arguments
+;   arg:1 - TW_IDENTITY.ProductName of scanner to test
+;   arg:2 - global to set on fail
+;
+; Globals
+;   g_localcertifyresult - global to report to caller on fail
+;
+; Locals
+;   twidentity.productname - product name of scanner to test
+;   globaltosetonfail - name says it all
+;
+; Returns
+;   (none)
+;
+; History
+;   1.0 - initial release
+;   1.1 - add scanning so msg_settask and twei_twaindirect can be tested
+;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Initialize stuff, load tables if not already done for us...
+;
+echo.titlesuite 'TWAIN Direct Badge v1.1 17-Sep-2020'
+echo.yellow '*************************************************************************************'
+echo.yellow '*** This tests the TWAIN Direct Badge.  Skipping or failing means the driver      ***'
+echo.yellow '*** does not support this functionality.  It does not prevent certification.      ***'
+echo.yellow '*************************************************************************************'
+;
+setlocal twidentity.productname '${arg:1}'
+setlocal globaltosetonfail '${arg:2}'
+setglobal g_localcertifyresult 'pass' ; assume success
+;
+if '${get:TW_ARRAY.ItemType}' != '' goto MAIN.LOADTABLES.SKIP
+run '${folder:certification}/LoadTables'
+:MAIN.LOADTABLES.SKIP
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Run the tests...
+;
+call CERTIFY '${folder:certification}/Opends'  '${get:twidentity.productname}' 'g_localcertifyresult' 'embedded'
+if '${get:g_localcertifyresult}' == 'fail' goto MAIN.CLOSEDS
+;
+call CERTIFY 'TWAIN Direct Badge'              '${get:twidentity.productname}' 'g_localcertifyresult'
+call CERTIFY 'DAT_IMAGEMEMFILEXFER'            '${get:twidentity.productname}' 'g_localcertifyresult' '${folder:parent}'
+;
+:MAIN.CLOSEDS
+call CERTIFY '${folder:certification}/Closeds' '${get:twidentity.productname}' 'g_localcertifyresult' 'embedded'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Summary and cleanup...
+;
+; Did we pass? (do an extra check)
+if '${get:g_localcertifyresult}' == 'skip' goto MAIN.SKIP
+if '${get:g_localcertifyresult}' != 'pass' goto MAIN.ERROR
+echo ''
+echo.passfail 'BADGE SUMMARY' 'pass'
+return 'pass'
+;
+; Skip...
+:MAIN.SKIP
+echo ''
+echo.passfail 'BADGE SUMMARY' 'skip'
+setglobal '${get:globaltosetonfail}' 'skip'
+return 'fail'
+;
+; Ruh-roh...
+:MAIN.ERROR
+echo ''
+echo.passfail 'BADGE SUMMARY' 'fail'
+setglobal '${get:globaltosetonfail}' 'fail'
+return 'fail'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Function: Certify
+; arg:1 - script to run
+; arg:2 - TW_IDENTITY.ProductName of scanner to test
+; arg:3 - global value to update on fail
+; arg:4 - embeded flag for open/close, or folder for DAT_IMAGE*XFER calls
+; returns: (none)
+;
+:CERTIFY
+;
+; If a failure has occurred on a previous test, skip the rest of the tests,
+; except for closing, that would be bad...
+if '${arg:1}' ~contains 'Closeds' goto CERTIFY.RUN
+if '${get:${arg:3}}' == 'skip' goto CERTIFY.SKIP
+if '${get:${arg:3}}' == 'fail' goto CERTIFY.FAIL
+;
+; Run the test...
+:CERTIFY.RUN
+run '${arg:1}' '${arg:2}' '${arg:4}'
+if '${ret:}' == 'skip' goto CERTIFY.SKIP
+if '${ret:}' != 'pass' goto CERTIFY.FAIL
+return 'pass'
+;
+; Handle skipping, set the global so we have a record...
+:CERTIFY.SKIP
+setglobal '${arg:3}' 'skip'
+return 'skip'
+;
+; Handle failure, set the global so we have a record...
+:CERTIFY.FAIL
+setglobal '${arg:3}' 'fail'
+return 'fail'

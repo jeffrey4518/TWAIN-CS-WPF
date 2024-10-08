@@ -1,0 +1,101 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; DAT_EXTIMAGEINFO
+;   Check the return values from DAT_EXTIMAGEINFO to make sure the TWAIN Direct
+;   metadata is properly reported.
+;
+;   Here's the basic flow:
+;       DAT_EXTIMAGEINFO
+;       confirm that we have TWEI_TWAINDIRECTMETADATA
+;       confirm a sheet with no patchcodes
+;           TW_INFO[0].ReturnCode values TWRC_DATANOTAVAILABLE
+;       confirm a sheet with one patch code
+;           all TW_INFO[0].ReturnCode values are TWRC_SUCCESS
+;           all TW_INFO[0].ItemType values match the spec
+;           all TW_INFO[0].NumItems equals 1
+;           all TW_INFO[0].Item handle contains one of the TWPCH_* values
+;
+; Arguments
+;   arg:1 - indent the passfail text
+;   arg:2 - base filename (no extension)
+;
+; Globals
+;   (none)
+;
+; Locals
+;   name - current test being done
+;   indent - indent the passfail text
+;   twaindirectmetadata - the twain direct data
+;
+; Returns
+;   pass/fail
+;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Get the extended image info, save the data to 'twaindirectmetadata'.
+;
+setlocal indent '${arg:1}    '
+setlocal name 'dg_image/dat_extimageinfo/msg_get TWEI_TWAINDIRECTMETADATA'
+dsmentry src ds dg_image dat_extimageinfo msg_get '1,TWEI_TWAINDIRECTMETADATA,0,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal twaindirectmetadata '${ret:}'
+filewrite '${arg:2}_extimageinfo.txt' '${get:patchcodedata}'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Confirm that we got back all the twain direct extimageinfo data...
+;
+setlocal name 'Found TWEI_TWAINDIRECTMETADATA'
+if ',${get:twaindirectmetadata},' !contains 'TWEI_TWAINDIRECTMETADATA' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Start validating the contents of TWEI_TWAINDIRECTMETADATA, which is TW_INFO[0],
+; we expect to find the correct id and TWRC_SUCCESS...
+setlocal name 'TW_INFO[0].InfoID is TWEI_TWAINDIRECTMETADATA'
+if '${getindex:twaindirectmetadata:${get:TW_INFO.InfoID}}' != 'TWEI_TWAINDIRECTMETADATA' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].ReturnCode is TWRC_SUCCESS'
+if '${getindex:twaindirectmetadata:${get:TW_INFO.ReturnCode}}' != 'TWRC_SUCCESS' goto MAIN.ERROR.ECHOPASSFAIL
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Process TWRC_SUCCESS...
+;
+:MAIN.TWINFO.SUCCESS
+setlocal name 'TW_INFO[0].ReturnCode is TWRC_SUCCESS'
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].ItemType is TWTY_HANDLE'
+if '${getindex:twaindirectmetadata:${get:TW_INFO.ItemType}}' != 'TWTY_HANDLE' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].NumItems is 1'
+if '${getindex:twaindirectmetadata:${get:TW_INFO.NumItems}}' != '1' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].Item contains metadata'
+if '${gethandle:${getindex:twaindirectmetadata:${get:TW_INFO.Item}}:TWTY_HANDLE:-1}' !contains 'metadata' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+echo 
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Summary and cleanup...
+;
+; We passed...
+:MAIN.PASS
+return 'pass'
+;
+; Ruh-roh...
+:MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'fail - ${sts:} ${ret:}'
+return 'fail'

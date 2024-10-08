@@ -1,0 +1,229 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; DAT_EXTIMAGEINFO
+;   Check the return values from DAT_EXTIMAGEINFO to make sure the image address
+;   metadata is being properly reported.
+;
+;   Here's the basic flow:
+;       DAT_EXTIMAGEINFO
+;       confirm that we have the following TWEI_IA* items
+;           TWEI_IAFIELDA_VALUE
+;           TWEI_IAFIELDB_VALUE
+;           TWEI_IAFIELDC_VALUE
+;           TWEI_IAFIELDD_VALUE
+;           TWEI_IAFIELDE_VALUE (optional)
+;           TWEI_IALEVEL
+;
+; Arguments
+;   arg:1 - indent the passfail text
+;   arg:2 - base filename (no extension)
+;   arg:3 - TWEI_IAFIELD*_VALUE (can be empty is none)
+;   arg:4 - fixed field value, if any
+;   arg:5 - expected number of fields
+;
+; Locals
+;   imageaddressdata - the return value from DAT_EXTIMAGEINFO
+;   name - current test being done
+;   indent - indent the passfail text
+;   basefilename - used to store the extended image info into a file
+;   fieldfieldname - TWEI_IAFIELD*_VALUE (can be empty is none)
+;   fieldfieldvalue - fixed field value, if any
+;   totalfields - total fields we expect to see, all others must have no data
+;   twinfo.infoid.index - index to TW_INFO[n].infoid from the start of barcodedata
+;   twinfo.itemtype.index - index to TW_INFO[n].itemtype from the start of barcodedata
+;   twinfo.numitems.index - index to TW_INFO[n].numitems from the start of barcodedata
+;   twinfo.returncode.index - index to TW_INFO[n].returncode from the start of barcodedata
+;   twinfo.item.index - index to TW_INFO[n].item from the start of barcodedata
+;
+; Returns
+;   pass/fail
+;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Squirrel away the arguments...
+;
+setlocal indent '${arg:1}    '
+setlocal basefilename '${arg:2}'
+setlocal fixedfieldname '${arg:3}'
+setlocal fixedfieldvalue '${arg:4}'
+setlocal totalfields '${arg:5}'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Get the extended image info, save the data to 'imageaddressdata'.
+;
+setlocal name 'dg_image/dat_extimageinfo/msg_get TWEI_IA*'
+dsmentry src ds dg_image dat_extimageinfo msg_get '6,TWEI_IALEVEL,0,0,0,0,TWEI_IAFIELDA_VALUE,0,0,0,0,TWEI_IAFIELDB_VALUE,0,0,0,0,TWEI_IAFIELDC_VALUE,0,0,0,0,TWEI_IAFIELDD_VALUE,0,0,0,0,TWEI_IAFIELDE_VALUE,0,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal imageaddressdata '${ret:}'
+filewrite '${arg:2}_extimageinfo.txt' '${get:imageaddressdata}'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Confirm that we got back all the image address extimageinfo fields,
+; this doesn't mean they all have data, but they all must be present...
+;
+setlocal name 'Found TWEI_IALEVEL'
+if '${get:imageaddressdata}' !contains ',TWEI_IALEVEL,' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal name 'Found TWEI_IAFIELDA_VALUE'
+if '${get:imageaddressdata}' !contains ',TWEI_IAFIELDA_VALUE,' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal name 'Found TWEI_IAFIELDB_VALUE'
+if '${get:imageaddressdata}' !contains ',TWEI_IAFIELDB_VALUE,' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal name 'Found TWEI_IAFIELDC_VALUE'
+if '${get:imageaddressdata}' !contains ',TWEI_IAFIELDC_VALUE,' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal name 'Found TWEI_IAFIELDD_VALUE'
+if '${get:imageaddressdata}' !contains ',TWEI_IAFIELDD_VALUE,' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+setlocal name 'Found TWEI_IAFIELDE_VALUE'
+if '${get:imageaddressdata}' !contains ',TWEI_IAFIELDE_VALUE,' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Init our TWINFO indecies for TW_INFO[0]...
+;
+setlocal twinfo.infoid.index '${get:TW_INFO.InfoID}'
+setlocal twinfo.itemtype.index '${get:TW_INFO.ItemType}'
+setlocal twinfo.numitems.index '${get:TW_INFO.NumItems}'
+setlocal twinfo.returncode.index '${get:TW_INFO.ReturnCode}'
+setlocal twinfo.item.index '${get:TW_INFO.Item}'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Validate the contents of TWEI_IALEVEL, which is in TW_INFO[0]...
+;
+setlocal name 'TW_INFO[0].InfoID is TWEI_IALEVEL'
+if '${getindex:imageaddressdata:${get:twinfo.infoid.index}}' != 'TWEI_IALEVEL' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].ItemType is TWTY_UINT16'
+if '${getindex:imageaddressdata:${get:twinfo.itemtype.index}}' != 'TWTY_UINT16' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].NumItems is 1'
+if '${getindex:imageaddressdata:${get:twinfo.numitems.index}}' != '1' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].ReturnCode is TWRC_SUCCESS'
+if '${getindex:imageaddressdata:${get:twinfo.returncode.index}}' != 'TWRC_SUCCESS' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[0].Item is one of the TWIA_LEVEL# values'
+if '${gettwei:TWEI_IALEVEL:${getindex:imageaddressdata:${get:twinfo.item.index}}}' == 'TWIA_LEVEL1' goto MAIN.TWEI_LEVEL.DONE
+if '${gettwei:TWEI_IALEVEL:${getindex:imageaddressdata:${get:twinfo.item.index}}}' == 'TWIA_LEVEL2' goto MAIN.TWEI_LEVEL.DONE
+if '${gettwei:TWEI_IALEVEL:${getindex:imageaddressdata:${get:twinfo.item.index}}}' == 'TWIA_LEVEL3' goto MAIN.TWEI_LEVEL.DONE
+if '${gettwei:TWEI_IALEVEL:${getindex:imageaddressdata:${get:twinfo.item.index}}}' == 'TWIA_LEVEL4' goto MAIN.TWEI_LEVEL.DONE
+goto MAIN.ERROR.ECHOPASSFAIL
+:MAIN.TWEI_LEVEL.DONE
+echo.passfail '${get:indent}${get:name}' 'pass'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Initialize for the loop that'll go through the values.
+; iafieldindex is the index into iafieldvalue
+; iafieldvalue is the array of fields we'll be checking
+;
+setlocal iafieldindex 0
+setlocal iafieldvalue 'PLACEHOLDER,TWEI_IAFIELDA_VALUE,TWEI_IAFIELDB_VALUE,TWEI_IAFIELDC_VALUE,TWEI_IAFIELDD_VALUE,TWEI_IAFIELDE_VALUE'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Increment our TWINFO indecies for TW_INFO[n]...
+;
+:MAIN.TWINFO.NEXT
+increment iafieldindex '${get:iafieldindex}' 1
+increment twinfo.infoid.index '${get:twinfo.infoid.index}' 5 ; skip to the InfoID in the next TW_INFO
+increment twinfo.itemtype.index '${get:twinfo.itemtype.index}' 5 ; skip to the InfoID in the next TW_INFO
+increment twinfo.numitems.index '${get:twinfo.numitems.index}' 5 ; skip to the NumItems in the next TW_INFO
+increment twinfo.returncode.index '${get:twinfo.returncode.index}' 5 ; skip to the ReturnCode in the next TW_INFO
+increment twinfo.item.index '${get:twinfo.item.index}' 5 ; skip to the ReturnCode in the next TW_INFO
+if '${getindex:iafieldvalue:${get:iafieldindex}}' == '' goto MAIN.TWINFO.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Validate the contents of TWEI_IAFIELD*_VALUE, which is in TW_INFO[n]...
+; Anything less than or equal to the total number of fields must report
+; TWRC_SUCCESS, all others must report TWRC_DATANOTAVAILABLE...
+;
+setlocal name 'TW_INFO[${get:iafieldindex}].InfoID is ${getindex:iafieldvalue:${get:iafieldindex}}'
+if '${getindex:imageaddressdata:${get:twinfo.infoid.index}}' != '${getindex:iafieldvalue:${get:iafieldindex}}' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+; totalfields indicates the number of iafields we negotiated with a level
+; other than TWIA_UNUSED, so we require a status of success from them.
+if '${get:iafieldindex}' <= '${get:totalfields}' goto MAIN.TWINFO.FIELDHASDATA
+;
+; TWEI_IAFIELDE_VALUE is a special case, jump there when we detect it.
+; For the other fields we require a status return of TWRC_DATANOTAVAILABLE
+; if the field is currently disabled.
+if '${getindex:iafieldvalue:${get:iafieldindex}}' == 'TWEI_IAFIELDE_VALUE' goto MAIN.TWINFO.TWEI_IAFIELDE_VALUE
+setlocal name 'TW_INFO[${get:iafieldindex}].ReturnCode is TWRC_DATANOTAVAILABLE'
+if '${getindex:imageaddressdata:${get:twinfo.returncode.index}}' != 'TWRC_DATANOTAVAILABLE' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+goto MAIN.TWINFO.DONE
+;
+; Support for TWEI_IAFIELDE_VALUE is optional, so it's okay for it to
+; return a value of either TWRC_DATANOTAVAILABLE or TWRC_INFONOTSUPPORTED.
+:MAIN.TWINFO.TWEI_IAFIELDE_VALUE
+setlocal name 'TW_INFO[${get:iafieldindex}].ReturnCode is TWRC_DATANOTAVAILABLE or TWRC_INFONOTSUPPORTED'
+if '${getindex:imageaddressdata:${get:twinfo.returncode.index}}' == 'TWRC_DATANOTAVAILABLE' goto MAIN.TWINFO.FIELDHASNODATA
+if '${getindex:imageaddressdata:${get:twinfo.returncode.index}}' == 'TWRC_INFONOTSUPPORTED' goto MAIN.TWINFO.FIELDHASNODATA
+goto MAIN.ERROR.ECHOPASSFAIL
+:MAIN.TWINFO.FIELDHASNODATA
+echo.passfail '${get:indent}${get:name}' 'pass'
+goto MAIN.TWINFO.DONE
+;
+; If we got here we expect valid data, check each of the TW_INFO fields...
+:MAIN.TWINFO.FIELDHASDATA
+setlocal name 'TW_INFO[${get:iafieldindex}].ReturnCode is TWRC_SUCCESS'
+if '${getindex:imageaddressdata:${get:twinfo.returncode.index}}' != 'TWRC_SUCCESS' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[${get:iafieldindex}].ItemType is TWTY_STR32'
+if '${getindex:imageaddressdata:${get:twinfo.itemtype.index}}' != 'TWTY_STR32' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+setlocal name 'TW_INFO[${get:iafieldindex}].NumItems is 1'
+if '${getindex:imageaddressdata:${get:twinfo.numitems.index}}' != '1' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+; The image address value text is behind a handle...
+setlocal handle ${getindex:imageaddressdata:${get:twinfo.item.index}}
+setlocal fieldavalue '${gethandle:${get:handle}:TWTY_STR32:0}'
+;
+; Do this test if the field we're working on matches fixedfieldname,
+; we want to make sure the string we set it to comes back to us...
+if '${getindex:imageaddressdata:${get:twinfo.itemtype.index}}' != '${get:fixedfieldname}' goto MAIN.TWINFO.NEXT
+setlocal name 'TW_INFO[${get:iafieldindex}].Item contains "${get:fixedfieldvalue}" (${get:printertext})'
+if '${get:printertext}' !contains '${get:fixedfieldvalue}' goto MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'pass'
+;
+free handle handle
+goto MAIN.TWINFO.NEXT
+:MAIN.TWINFO.DONE
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Summary and cleanup...
+;
+; We passed...
+:MAIN.PASS
+return 'pass'
+;
+; Ruh-roh...
+:MAIN.ERROR.ECHOPASSFAIL
+echo.passfail '${get:indent}${get:name}' 'fail - ${sts:} ${ret:}'
+return 'fail'

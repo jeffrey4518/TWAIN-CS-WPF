@@ -1,0 +1,21 @@
+{
+    "comment": [
+        "******************************************************************************",
+        "rename this file to twaincert.appdata.txt, and remove the leading X from any",
+        "values you want to use."
+    ],
+
+
+
+    "commentLogLevel": [
+        "******************************************************************************",
+        "default: 0",
+        "0 - only errors are reported",
+        "these values are bits, add them together as needed, for instance, to get",
+        "all logging data flushed to disk, use a value of 7",
+        "1 - log informational messages",
+        "2 - log verbose stuff, like HTML headers",
+        "4 - flush to disk, use to help diagnose crashes"
+    ],
+    "XlogLevel": 3
+}

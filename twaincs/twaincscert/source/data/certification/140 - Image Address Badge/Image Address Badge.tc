@@ -1,0 +1,385 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Image Address Badge
+;   This script tests the minimum requirements for a TWAIN driver to support image addressing.
+;
+; Arguments
+;   arg:1 - TW_IDENTITY.ProductName of scanner to test
+;
+; Globals
+;   g_supportedcaps - return from MSG_GET CAP_SUPPORTEDCAPS
+;
+; Locals
+;   certifyresult - track if we fail
+;
+; Returns
+;   pass/fail
+;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Initialize...
+;
+setlocal certifyresult 'pass' ; assume we'll pass
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Reset to a known state...
+;
+setlocal name 'MSG_RESETALL'
+dsmentry src ds dg_control dat_capability msg_resetall '0,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.MSGRESETALL.FAIL
+echo.passfail '${get:name}' 'pass'
+goto MAIN.MSGRESETALL.DONE
+;
+:MAIN.MSGRESETALL.FAIL
+echo.passfail '${get:name}' 'skip - ${sts:} ${ret:}'
+setlocal certifyresult 'fail'
+goto MAIN.DONE
+:MAIN.MSGRESETALL.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CAP_IMAGEADDRESSENABLED must be supported, and must offer both TRUE
+; and FALSE, and must currently be FALSE, otherwise skip it all
+;
+setlocal name 'CAP_IMAGEADDRESSENABLED is supported'
+dsmentry src ds dg_control dat_capability msg_get 'CAP_IMAGEADDRESSENABLED,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.CAP_IMAGEADDRESSENABLEDSUPPORTED.SKIP
+if ',${ret:},' !~contains ',TRUE,' goto MAIN.CAP_IMAGEADDRESSENABLEDSUPPORTED.SKIP
+if ',${ret:},' !~contains ',FALSE,' goto MAIN.CAP_IMAGEADDRESSENABLEDSUPPORTED.SKIP
+echo.passfail '${get:name}' 'pass'
+goto MAIN.CAP_IMAGEADDRESSENABLEDSUPPORTED.DONE
+;
+:MAIN.CAP_IMAGEADDRESSENABLEDSUPPORTED.SKIP
+echo.passfail '${get:name}' 'skip - ${sts:} ${ret:}'
+setlocal certifyresult 'skip'
+goto MAIN.DONE
+:MAIN.CAP_IMAGEADDRESSENABLEDSUPPORTED.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CAP_SUPPORTEDCAPS: check that all required capabilities are reported, we're
+; not looking for CAP_IAFIELDE_* capabilities, since they're not required...
+;
+setlocal name 'CAP_SUPPORTEDCAPS MSG_GET'
+dsmentry src ds dg_control dat_capability msg_get 'CAP_SUPPORTEDCAPS,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+setglobal g_supportedcaps '${ret:}'
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IMAGEADDRESSENABLED found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IMAGEADDRESSENABLED,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDA_LASTPAGE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDA_LASTPAGE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDB_LASTPAGE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDB_LASTPAGE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDC_LASTPAGE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDC_LASTPAGE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDD_LASTPAGE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDD_LASTPAGE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDA_LEVEL found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDA_LEVEL,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDB_LEVEL found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDB_LEVEL,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDC_LEVEL found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDC_LEVEL,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDD_LEVEL found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDD_LEVEL,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDA_PRINTFORMAT found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDA_PRINTFORMAT,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDB_PRINTFORMAT found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDB_PRINTFORMAT,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDC_PRINTFORMAT found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDC_PRINTFORMAT,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDD_PRINTFORMAT found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDD_PRINTFORMAT,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDA_VALUE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDA_VALUE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDB_VALUE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDB_VALUE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDC_VALUE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDC_VALUE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'CAP_SUPPORTEDCAPS CAP_IAFIELDD_VALUE found'
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDD_VALUE,' goto MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+goto MAIN.CAP_SUPPORTEDCAPS.DONE
+:MAIN.CAP_SUPPORTEDCAPS.FAIL
+echo.passfail '${get:name}' 'fail - ${sts:} ${ret:}'
+setlocal certifyresult 'fail'
+goto MAIN.DONE
+:MAIN.CAP_SUPPORTEDCAPS.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ICAP_SUPPORTEDEXTIMAGEINFO: check that all metadata is supported.  We're not
+; checking for TWEI_IAFIELDE_VALUE, since it's not required...
+;
+setlocal name 'ICAP_SUPPORTEDEXTIMAGEINFO MSG_GET'
+dsmentry src ds dg_control dat_capability msg_get 'ICAP_SUPPORTEDEXTIMAGEINFO,0,0,0'
+setlocal icapsupportedextimageinfo '${ret:}'
+if '${sts:}' != 'SUCCESS' goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'ICAP_SUPPORTEDEXTIMAGEINFO TWEI_IALEVEL found'
+if ',${get:icapsupportedextimageinfo},' !~contains ',TWEI_IALEVEL,' goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+setlocal name 'ICAP_SUPPORTEDEXTIMAGEINFO TWEI_IAFIELDA_VALUE found'
+if ',${get:icapsupportedextimageinfo},' !~contains ',TWEI_IAFIELDA_VALUE,' goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'ICAP_SUPPORTEDEXTIMAGEINFO TWEI_IAFIELDB_VALUE found'
+if ',${get:icapsupportedextimageinfo},' !~contains ',TWEI_IAFIELDB_VALUE,' goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'ICAP_SUPPORTEDEXTIMAGEINFO TWEI_IAFIELDC_VALUE found'
+if ',${get:icapsupportedextimageinfo},' !~contains ',TWEI_IAFIELDC_VALUE,' goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'pass'
+setlocal name 'ICAP_SUPPORTEDEXTIMAGEINFO TWEI_IAFIELDD_VALUE found'
+if ',${get:icapsupportedextimageinfo},' !~contains ',TWEI_IAFIELDD_VALUE,' goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'pass'
+goto MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.DONE
+;
+:MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.FAIL
+echo.passfail '${get:name}' 'fail - ${sts:} ${ret:}'
+setlocal certifyresult 'fail'
+:MAIN.ICAP_SUPPORTEDEXTIMAGEINFO.DONE
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CAP_IMAGEADDRESSENABLED resets to FALSE...
+;
+setlocal name 'CAP_IMAGEADDRESSENABLED resets to FALSE'
+dsmentry src ds dg_control dat_capability msg_reset 'CAP_IMAGEADDRESSENABLED,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.CAP_IMAGEADDRESSENABLEDFALSE.SKIP
+if ',${ret:},' !~contains ',FALSE,' goto MAIN.CAP_IMAGEADDRESSENABLEDFALSE.SKIP
+echo.passfail '${get:name}' 'pass'
+;
+goto MAIN.CAP_IMAGEADDRESSENABLEDFALSE.DONE
+:MAIN.CAP_IMAGEADDRESSENABLEDFALSE.SKIP
+echo.passfail '${get:name}' 'skip - ${sts:} ${ret:}'
+setlocal certifyresult 'fail'
+goto MAIN.DONE
+:MAIN.CAP_IMAGEADDRESSENABLEDFALSE.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; CAP_IMAGEADDRESSENABLED set to TRUE...
+;
+setlocal name 'CAP_IMAGEADDRESSENABLED set to TRUE'
+dsmentry src ds dg_control dat_capability msg_set 'CAP_IMAGEADDRESSENABLED,TWON_ONEVALUE,TWTY_BOOL,TRUE'
+if '${sts:}' != 'SUCCESS' goto MAIN.CAP_IMAGEADDRESSENABLEDTRUE.FAIL
+dsmentry src ds dg_control dat_capability msg_getcurrent 'CAP_IMAGEADDRESSENABLED,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.CAP_IMAGEADDRESSENABLEDTRUE.FAIL
+if ',${ret:},' !~contains ',TRUE,' goto MAIN.CAP_IMAGEADDRESSENABLEDTRUE.FAIL
+echo.passfail '${get:name}' 'pass'
+;
+goto MAIN.CAP_IMAGEADDRESSENABLEDTRUE.DONE
+:MAIN.CAP_IMAGEADDRESSENABLEDTRUE.FAIL
+echo.passfail '${get:name}' 'skip - ${sts:} ${ret:}'
+setlocal certifyresult 'fail'
+goto MAIN.DONE
+:MAIN.CAP_IMAGEADDRESSENABLEDTRUE.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Figure out which transfers we're checking...
+;
+setlocal name 'get ICAP_XFERMECH'
+dsmentry src ds dg_control dat_capability msg_get 'ICAP_XFERMECH,0,0,0'
+if '${sts:}' != 'SUCCESS' goto MAIN.ERROR
+echo.passfail '${get:name}' 'pass'
+setlocal xfermech.enum '${ret:}'
+;
+setlocal xfermech.total 0 ; total supported transfers
+;
+; Turn twsx_* values into dat_image*xfer values...
+if ',${get:xfermech.enum},' !~contains ',TWSX_NATIVE,' goto MAIN.ERROR ; mandatory
+setlocal xfermech.list 'DAT_IMAGENATIVEXFER'
+increment xfermech.total ${get:xfermech.total} 1
+;
+if ',${get:xfermech.enum},' !~contains ',TWSX_MEMORY,' goto MAIN.ERROR ; mandatory
+setlocal xfermech.list '${get:xfermech.list},DAT_IMAGEMEMXFER'
+increment xfermech.total ${get:xfermech.total} 1
+;
+if ',${get:xfermech.enum},' !~contains ',TWSX_FILE,' goto MAIN.XFERMECH.SKIPFILE
+setlocal xfermech.list '${get:xfermech.list},DAT_IMAGEFILEXFER'
+increment xfermech.total ${get:xfermech.total} 1
+:MAIN.XFERMECH.SKIPFILE
+;
+if ',${get:xfermech.enum},' !~contains ',TWSX_MEMFILE,' goto MAIN.XFERMECH.SKIPMEMFILE
+setlocal xfermech.list '${get:xfermech.list},DAT_IMAGEMEMFILEXFER'
+increment xfermech.total ${get:xfermech.total} 1
+:MAIN.XFERMECH.SKIPMEMFILE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; We need at least 8 sheets of paper, 10 if the driver supports CAP_IAFIELDE_LEVEL.
+; Multiply that by the number of transfers we'll be doing.
+;
+setlocal sheets.onexfer 8
+if ',${get:g_supportedcaps},' !~contains ',CAP_IAFIELDE_LEVEL,' goto MAIN.8SHEETSONLY
+increment sheets.onexfer ${get:sheets.onexfer} 2
+:MAIN.8SHEETSONLY
+multiply sheets ${get:sheets.onexfer} ${get:xfermech.total}
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Prompt the user...
+;
+echo.prompt
+echo.prompt "Scanning will take place now.  A progress indicator may appear, but no other
+echo.prompt "interaction should be needed."
+echo.prompt
+echo.prompt "Place ${get:sheets} sheets in the scanner's feeder.  The scanner may print text"
+echo.prompt "on them.  If the feeder cannot accept ${get:sheets} sheets, put in as many"
+echo.prompt "multiples of ${get:sheets.onexfer} sheets that it can handle.  The script will prompt"
+echo.prompt "for more if needed."
+echo.prompt
+pause '(press the ENTER key when ready to continue)'
+echo.prompt
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; We'll loop here over each of the transfers...
+;
+setlocal xfermech.index -1 ; one less than the first index for xfermech.list
+:MAIN.XFERMECH.NEXT
+increment xfermech.index ${get:xfermech.index} 1
+setlocal xfermech.value '${getindex:xfermech.list:${get:xfermech.index}}'
+if '${get:xfermech.value}' == '' goto MAIN.XFERMECH.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Test image address level 1 with fixed field, confirm support for 0 and no padding...
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.0001' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL1,0000,1' 'TWIA_UNUSED,,' 'TWIA_UNUSED,,' 'TWIA_UNUSED,,'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.1' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL1,####,1' 'TWIA_UNUSED,,' 'TWIA_UNUSED,,' 'TWIA_UNUSED,,'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Test image address level 2 with fixed field, confirm support for 0 and no padding...
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.0020.0001' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL2,0000,20' 'TWIA_LEVEL1,0000,1' 'TWIA_UNUSED,,' 'TWIA_UNUSED,,'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.20.1' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL2,####,20' 'TWIA_LEVEL1,####,1' 'TWIA_UNUSED,,' 'TWIA_UNUSED,,'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Test image address level 3 with fixed field, confirm support for 0 and no padding...
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.0300.0020.0001' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL3,0000,300' 'TWIA_LEVEL2,0000,20' 'TWIA_LEVEL1,0000,1' 'TWIA_UNUSED,,'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.300.20.1' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL3,####,300' 'TWIA_LEVEL2,####,20' 'TWIA_LEVEL1,####,1' 'TWIA_UNUSED,,'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Test image address level 4 with fixed field (skip if TWIA_LEVEL4 is not supported),
+; confirm support for 0 and no padding...
+;
+if ',${get:icapsupportedextimageinfo},' !~contains 'TWIA_LEVEL4' goto MAIN.LEVEL4.SKIP
+echo.titletest '${get:xfermech.value} Set IA: FIXED.4000.0300.0020.0001' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL4,0000,4000' 'TWIA_LEVEL3,0000,300' 'TWIA_LEVEL2,0000,20' 'TWIA_LEVEL1,0000,1'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+;
+echo.titletest '${get:xfermech.value} Set IA: FIXED.4000.300.20.1' 1
+call CERTIFY '${get:xfermech.value}' '${folder:parent}' 'TWEI_IAFIELDA_VALUE' 'TWIA_FIXED,#####,FIXED' 'TWIA_LEVEL4,####,4000' 'TWIA_LEVEL3,####,300' 'TWIA_LEVEL2,####,20' 'TWIA_LEVEL1,####,1'
+if '${ret:}' != 'pass' goto MAIN.ERROR
+:MAIN.LEVEL4.SKIP
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Next transfer mechanism...
+;
+goto MAIN.XFERMECH.NEXT
+:MAIN.XFERMECH.DONE
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; All done...
+;
+:MAIN.DONE
+echo " "
+return '${get:certifyresult}'
+;
+:MAIN.ERROR
+echo.passfail '${get:name}' 'fail'
+echo " "
+return '${get:certifyresult}'
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Function: Certify
+;
+; Arguments
+;   arg:1 - name of the script to run
+;   arg:2 - name of test (used for files)
+;   arg:3 - TWEI_IAFIELD*_VALUE containing the fixed field (can be empty if none)
+;   arg:4 - fielda settings (level,printformat,value)
+;   arg:5 - fieldb settings (level,printformat,value)
+;   arg:6 - fieldc settings (level,printformat,value)
+;   arg:7 - fieldd settings (level,printformat,value)
+;   arg:8 - fielde settings (level,printformat,value)
+;
+; Returns
+;   pass/fail
+;
+:CERTIFY
+;
+run '${arg:1}' '${arg:2}' '${arg:3}' '${arg:4}' '${arg:5}' '${arg:6}' '${arg:7}' '${arg:8}'
+if '${ret:}' != 'pass' goto CERTIFY.FAIL
+return 'pass'
+;
+:CERTIFY.FAIL
+setlocal certifyresult 'fail'
+return 'fail'
